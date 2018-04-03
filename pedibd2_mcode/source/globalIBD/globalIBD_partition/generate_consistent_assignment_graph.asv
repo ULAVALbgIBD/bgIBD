@@ -1,0 +1,53 @@
+function [assignment error] = generate_consistent_assignment_graph(input_pairs, kinship2, verify, debug, range)
+
+assignment = [];
+error = 0;
+
+if( isempty(input_pairs) || isempty(kinship2) )
+    error = 1;
+    return;
+end
+
+intervals = input_pairs.intervals;
+
+[nseg, ncols] = size(intervals);
+if( nseg <= 0 || ncols ~= 3 )
+    error = 1;
+    return;
+end
+
+if( length(input_pair.pair_vit) ~= seg )
+    error = 1;
+    return;
+end
+
+if( length(input_pair.pair_max) ~= seg )
+    error = 1;
+    return;
+end
+
+if( length(input_pair.pair_posIBD1) ~= seg )
+    error = 1;
+    return;
+end
+
+if( length(input_p
+
+for seg = 1:nseg
+    disp(['          processing segment: ', num2str(seg), ' ...']);
+    % false positive, cliques not included in the correct ones
+    [alleles_all] = graph_1segment(input_pairs.pair_vit{seg}, input_pairs.pair_max{seg}, kinship2, input_pairs.pair_posIBD1{seg}, input_pairs.pair_pos{seg}, verify, debug, range);
+    
+    if( isempty(alleles_all) )
+        disp(['segment: ', num2str(seg), ' assignment error']);
+    else
+        assignment.alleles_all{seg} = alleles_all;
+        assignment.alleles{seg} = alleles_all(range.family_range,1:2);
+    end
+end
+
+assignment.intervals = intervals;
+
+
+
+end

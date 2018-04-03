@@ -1,0 +1,8 @@
+function compare_viterbi_likelihood(pairs, intervals)
+
+ml = pairs.pair_max;
+vi = pairs.pair_vit;
+
+[rows, cols] = size(int
+
+end

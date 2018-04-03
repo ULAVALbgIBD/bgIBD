@@ -1,0 +1,13 @@
+function new_config = isomorphism_replace(config, alleles_dist)
+
+new_config = []
+
+[rows, cols] = size(config);
+if( rows <= 0 || cols ~= 2 )
+    return;
+end
+
+
+
+end
+

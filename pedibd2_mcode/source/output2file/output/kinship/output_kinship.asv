@@ -1,0 +1,63 @@
+function error = output_kinship(fid, all_families, kinship)
+
+    error = 0;
+    nfam = length(all_families);
+    if( nfam <= 0 )
+        error = 1;
+        return;
+    end
+    if( length(kinship) ~= nfam )
+        error = 1;
+        return;
+    end
+    
+    for i = 1:nfam
+        if( isempty(all_families{i}) )
+            error = 1;
+            return;
+        end
+        family_range = all_families{i}.familiy_range;
+        nind = length(family_range);
+        if( nind < 2 && ~isempty(kinship{i}) )
+            error = 1;
+            return;
+        end
+        if( nind >= 2 )
+            [r, c] = size(kinship{i});
+            if( r ~= nind || c ~= nind )
+                error = 1;
+                return;
+            end
+        end
+    end
+
+    fprintf(fid, 'family, id1 - id2 \tkinship-coefficient\n');
+    for f = 1:length(all_families)
+        family = all_families{f}.structure;
+        family_range = all_families{f}.family_range;
+        family_id = all_families{f}.family_id;
+        nind = length(family_range);
+        % output all genotyped individuals
+        if( nind <= 2 || isempty(kinship{f}) )
+            continue;
+        end        
+        for i = 1:nind
+            for j = 1:nind
+                id1 = family(i,8);
+                id2 = family(j,8);
+                k = kinship{f}(i,j);
+                fprintf(fid, '%4d: %4d - %4d \t', family_id, id1, id2);
+                fprintf(fid, '%f\t', k);
+                fprintf(fid, '\n');                
+            end
+        end
+        
+    end
+end
+
+
+
+
+
+
+

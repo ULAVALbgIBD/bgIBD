@@ -1,0 +1,112 @@
+
+
+function [smoothed_vit error] = resist_fluctuation(viterbi, posteriorIBD1, map)
+
+
+smoothed_vit = [];
+error = 0;
+
+[nmarkers, c] = size(map);
+if( nmarkers <= 0 || c ~= 1 )
+    error = 1;
+    disp('error in marker list');
+    return;
+end
+
+[r, c] = size(viterbi);
+if( r <= 0 || r ~= nmarkers || c ~= 2 )
+    error = 1;
+    disp('error in viterbi decoding');
+    return;
+end
+
+temp{1} = viterbi;
+segments =  generate_consistent_interval_viterbi( temp );
+[nseg, c] = size(segments);
+if( nseg <= 0 || nseg > nmarkers || c ~= 3 || segments(nseg,2) ~= nmarkers )
+    error = 1;
+    disp('error in segmenting chromosomes');
+    return;
+end
+
+[d1, d2, d3] = size(posteriorIBD1);
+if( d1 <= 0 || d1 ~= nmarkers || d2 ~= 2 || d3 ~= 2)
+    error = 1;
+    disp('error in posterior decoding');
+    return;
+end
+
+
+
+smoothed_vit(1:nmarkers, 1:2) = viterbi(1:nmarkers, 1:2);
+
+temp = [];
+temp{1} = smoothed_vit;
+segments =  generate_consistent_interval_viterbi( temp );
+[nseg, c] = size(segments);
+if( nseg <= 0 || c ~= 3 )
+    error = 1;
+    disp('error in segmentation');
+    return;
+end
+foreground = smoothed_vit(1:nmarkers, 1);
+cutoff = 10 * 10^6;
+for i = 1:nseg
+    a = segments(i,1);
+    b = segments(i,2);
+    if( ~all(foreground(a:b) == foreground(a)) )
+        error = 1;
+        disp('error in segmenting chromosomes');
+        return;
+    end
+    if( a <= 0 || b <= 0 || a > nmarkers || b > nmarkers || a > b )
+        error = 1;
+        disp('error in segmenting chromosomes');
+        return;
+    end
+    if( map(b) - map(a) < cutoff )
+       nearby = (map(b) - map(a));
+       left = 1;
+       right = nmarkers;
+       close_left = a;
+       for j = a:-1:1
+           if( foreground(j) == 2 )
+               close_left = j;
+           end
+           if( map(a) - map(j) > nearby )
+               left = j;
+               break;
+           end
+       end
+       close_right = b;
+       for j = b:1:nmarkers
+           if( foreground(j) == 2 )
+               close_right = j;
+           end
+           if( map(j) - map(b) > nearby )
+               right = j;
+               break;
+           end
+       end
+       average_vit = round(mean(foreground(left:right)));
+       if( average_vit == 2 )
+           if( close_left < a && close_right > b )
+               m1 = mean(posteriorIBD1(close_left:a-1,1,1)) + mean(posteriorIBD1(close_left:a-1,1,2)) - mean(posteriorIBD1(close_left:a-1,2,1)) - mean(posteriorIBD1(close_left:a-1,2,2));
+               m2 = mean(posteriorIBD1(b+1:close_right,1,1)) + mean(posteriorIBD1(b+1:close_right,1,2)) - mean(posteriorIBD1(b+1:close_right,2,1)) - mean(posteriorIBD1(b+1:close_right,2,2));
+               if( abs(m1-m2) > 0.5 )
+                   continue;
+               end
+           end
+       end       
+       if( smoothed_vit(a,1) < average_vit && smoothed_vit(a,1) == 1 )
+           if( nnz(oblist(a:b) == 1) <= 2 )
+               smoothed_vit(a:b,1) = average_vit;
+           end
+       end
+    end
+end
+
+
+
+end
+

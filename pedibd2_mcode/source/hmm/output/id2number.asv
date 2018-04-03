@@ -1,0 +1,23 @@
+
+
+function [map] = id2num(is)
+
+
+
+for i = 1:length(is(:,1))
+    temp1 = 0;
+    temp2 = 0;
+    if
+end
+
+
+
+
+%%
+
+
+
+
+
+
+

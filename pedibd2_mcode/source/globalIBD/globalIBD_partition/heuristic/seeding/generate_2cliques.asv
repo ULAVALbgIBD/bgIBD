@@ -1,0 +1,92 @@
+
+% set partition based on neighborhood voting
+
+function [two_cliques, new_pairs] = generate_2cliques(pairs, kinship2, posteriorIBD1, posterior, triples, clique_assignment, tolerance, range)
+
+
+% preprocessing to make ibd2 consistent
+
+ibd1 = (pairs == 1);
+ibd2 = (pairs == 2);
+ibd12 = (pairs >= 1);
+
+index = 0;  %node with the most neighbors
+num = length(pairs(1,:));
+
+new_pairs = pairs;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+temp = sum(clique_assignment, 1);
+if( ~any((temp==0)) )
+    % none unassigned individual
+    index = 0;
+    two_cliques = [];  
+    return;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pick the node with maximum number of neighbors
+[index, neighbor12] = biggest_degree_node(ibd12, find(temp==0), 1:num);
+neighbor1 = find(ibd1(index,:) == 1);
+neighbor2 = find(ibd2(index,:) == 1);
+neighbor12 = find(ibd12(index,:) == 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% index is the biggest node to be expanded
+% pick leaf individuals first
+% will remove more ambiguity in this step
+% consider ibd1 relationship to index only
+% ibd2 relationship cannot be biased towards each clique 
+[p_clique_forced, m_clique_forced] = initial_partition(index, neighbor1, kinship2, posteriorIBD1);
+
+valid_triples = triples.valid_triples;
+for i = 1:num
+    for j = 1:num
+        if( valid_triples(index,i,j) > 0 )
+            
+        end
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+[p_clique_expanded, m_clique_expanded, vote_both, vote_neither] = vote_partition(p_clique_forced, m_clique_forced, neighbor12, ibd12);
+
+
+if( isempty(p_clique_expanded) && isempty(m_clique_expanded) )
+    [final_p_clique, final_m_clique, final_pm_clique] = prune_2cliques_complex(vote_both, kinship2, posteriorIBD1, posterior, pairs);
+else
+    [final_p_clique, final_m_clique, final_pm_clique] = prune_2cliques(index, neighbor12, ibd12, p_clique_forced, p_clique_expanded, m_clique_forced, m_clique_expanded, vote_both, posterior, tolerance);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if( isempty(final_pm_clique) )
+    disp('error in clique partition seeding');
+end
+
+% for small neighborhood partion, index might have been reassigned
+two_cliques.rep_p = -index;
+two_cliques.rep_m = index;
+
+two_cliques.p_clique = final_p_clique; 
+two_cliques.m_clique = final_m_clique;
+two_cliques.pm_clique = final_pm_clique;
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+

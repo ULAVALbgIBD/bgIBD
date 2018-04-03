@@ -1,0 +1,12 @@
+function dir_all(directory)
+
+
+list 
+len = length(directory);
+for i = 1:len
+    if( directory(i).name ~= '.' )
+        dir_all(directory(i).name);
+    end
+end
+
+end

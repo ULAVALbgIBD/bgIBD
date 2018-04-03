@@ -1,0 +1,10 @@
+function [trans genotype] = enumerate_transmission(genotype1, genotype2)
+    
+count = 0;
+for i1 = 1:2
+    for i2 = 1:2
+    for j = 1:2
+        count = count + 1;
+        trans(count) = 
+            
+end

@@ -1,0 +1,111 @@
+function [error] = check_family_structure(pedigree, families)
+
+% check whether the family indexing is correct, whether parents are all
+% proceeding children
+
+error = 0;
+
+if( isempty(families) )
+    disp('error in processing family structures');
+    error = 1;
+    return;
+end
+
+[rows, cols] = size(pedigree);
+
+if( rows <= 0 || cols < 12 )
+    error = 1;
+    disp('error in pedigree structure');
+    return;
+end
+
+nonrep(1:rows) = 0;
+
+for i = 1:length(families)
+    if( isempty(families{i}) )
+        disp('error in processing family structures');
+        error = 1;
+        return;
+    end
+    full_range = families{i}.pedigree_range_full;
+    genotyped_range = families{i}.family_range;
+    family_structure = families{i}.structure;
+    nind = length(full_range);
+    [r,c] = size( family_structure );
+    if( r <= 0 || c < 12 )
+        error = 1;
+        disp('error in processing family structures');
+        return;
+    end
+    if( r ~= nind )
+        error = 1;
+        disp('error in processing family structures');
+        return;     
+    end
+    ref_family = pedigree(full_range,:);
+    [r2, c2] = size( ref_family );
+    if( nind ~ r || nind ~= r2 || c1 ~= c2 )
+        error = 1;
+        disp('error in processing family structures')
+    if( nnz(family_structure(1:r,1:12)-pedigree(full_range,1:12)) > 0 )
+        error = 1;
+        disp('error in processing family structures');
+        return;
+    end
+    for j = 1:r
+        if( family_structure(j,2) ~= j )
+            error = 1;
+            disp('error in processing family structures');
+            return; 
+        end
+        if( family_structure(j,3) > j || family_structure(j,4) > j )
+            % parents not proceeding children;
+            error = 1;
+            disp('error in processing family structures');
+            return; 
+        end
+    end
+
+    if( any(nonrep(full_range)>0) )
+        error = 1;
+        disp('error in partition families');
+        return;
+    else
+        % partition
+        nonrep(full_range) = 1;
+    end
+    if( any(full_range <= 0) || any(full_range > rows) )
+        error = 1;
+        disp('error in pedigree indexing');
+        return; 
+    end
+    for k = 1:length(full_range)-1
+        if( full_range(k+1) ~= full_range(k) + 1 )
+            error = 1;
+            disp('error in pedigree indexing');
+            return;           
+        end
+    end
+    if( ~isempty(genotyped_range) )
+        if( ~all(family_structure(genotyped_range,7) == 1) )
+            error = 1;
+            disp('error in processing family structures');
+            return;         
+        end
+        if( length(unique(genotyped_range)) ~= length(genotyped_range) )
+            error = 1;
+            disp('error in processing family structures');
+            return;          
+        end
+        if( max(genotyped_range) > r || min(genotyped_range) < 1 )
+            error = 1;
+            disp('error in processing family structures');
+            return;              
+        end
+    end
+end
+
+end
+
+
+

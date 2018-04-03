@@ -1,0 +1,23 @@
+function ibd_map = code_trans()
+
+ibd0 = 1;
+ibd_l = 2;
+ibd_r = 3;
+ibd_lr = 4;
+
+
+if( trans(1) == trans(3) )
+    if( trans(2) == trans(4) )
+        ibd = ibd_lr;
+    else
+        ibd = ibd_l;
+    end
+else
+    if( trans(2) == trans(4) )
+        ibd = ibd_r;
+    else
+        ibd = ibd0;
+    end
+end
+
+end

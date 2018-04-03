@@ -1,0 +1,9 @@
+function error = check_output()
+
+error = 0;
+
+fid = fopen([pwd, '/
+
+
+end
+

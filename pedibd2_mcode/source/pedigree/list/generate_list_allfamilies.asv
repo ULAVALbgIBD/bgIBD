@@ -1,0 +1,53 @@
+function [founder_list sibling_list] = generate_list_allfamilies(pedigree, all_families)
+    
+
+    founder_list = [];
+    sibling_list = [];
+    genotyped_list = [];
+    fcount = 0;
+    scount = 0;
+    gcount = 0;
+    
+    
+    for f = 1:length(all_families)
+        %temp is part of input_structure
+        
+        global_order = all_families{f}.pedigree_range_full;
+        family = pedigree(global_order,:);
+                
+        
+        for j = 1:length(family(:,1))
+            if( family(j,7) ~= 0 )
+                if( family(j,3) == 0 )
+                    if( family(j,4) == 0 )
+                        fcount = fcount + 1;
+                        founder_list(fcount) = global_order(j);
+                        % map to global index
+                    end
+                end
+            end
+        end
+        for j1 = 1:length(family(:,1))
+            for j2 = j1+1:length(family(:,1))
+                if( family(j1,7) ~= 0 && family(j2,7) ~= 0 )
+                    if( ( family(j1,3) == family(j2,3) && family(j1,3) ~= 0 ) || ( family(j1,4) == family(j2,4) && family(j1,4) ~= 0 ) )
+                        scount = scount + 1;
+                        sibling_list(scount,1) = global_order(j1);
+                        sibling_list(scount,2) = global_order(j2); 
+                        sibling_list(scount,3) = f;
+                    end
+                end
+            end
+        end      
+        
+    end
+    founder_list = 
+end
+
+
+
+
+
+
+
+

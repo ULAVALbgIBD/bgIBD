@@ -1,0 +1,41 @@
+function [ibs error] = count_ibs(seq1, seq2)
+
+ibs = [];
+error = 0;
+
+temp = size(seq1);
+if( nnz(temp>1) ~= 2)
+    error = 1;
+    disp('dimension error');
+    return;
+end
+[r c] = temp(temp>1);
+[r c] = find(size(seq1)>1);
+if( r <= 0 || c ~= 2 )
+    error = 1;
+    disp('dimension error');
+    return;
+end
+len = r;
+[r c] = find(size(seq2)>1);
+if( r ~= len || c ~= 2 )
+    error = 1;
+    disp('dimension error');
+    return;
+end
+
+ibs(1:len) = 0;
+s11 = seq1(1:len, 1);
+s12 = seq1(1:len, 2);
+s21 = seq2(1:len, 1);
+s22 = seq2(1:len, 2);
+
+missing(1:len) = ( (s11 == 0) | (s12 == 0) | (s21 == 0) | (s22 == 0) );
+
+phase1(1:len) = ( (s11 == s21) + (s12 == s22) );
+phase2(1:len) = ( (s11 == s22) + (s12 == s21) );
+ibs(1:len) = max(phase1, phase2);
+ibs(missing) = 3;
+
+
+end

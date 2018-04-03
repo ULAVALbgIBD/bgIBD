@@ -1,0 +1,356 @@
+function [chr_dist error] = consolidate_homology(spectrum, range, debug, printid)
+
+error = 0;
+
+genotyped = range.family_range;
+ngeno = length(genotyped);
+if( ngeno <= 0 )
+    error = 1;
+    disp('no genotyped individuals');
+    return;
+end
+nind = length(range.pedigree_range_full);
+if( nind <= 0 || nind < ngeno || any(genotyped > nind) || any(genotyped < 1) )
+    error = 1;
+    disp('error in family structures');
+    return;
+end
+family = range.structure;
+[r, c] = size(family);
+if( r <= 0 || r ~= nind || c < 12 )
+    error = 1;
+    disp('error in family structures');
+    return;
+end
+
+[rows, cols] = size(spectrum);
+if( rows <= 0 || cols <= 0 )
+    error = 1;
+    disp('error in chromosome spectrum');
+    return;
+end
+if( cols ~= ngeno || rows ~= 2 * cols )
+    error = 1;
+    disp('error in chromosome spectrum');
+    return;
+end
+
+
+
+
+homologous_chromosomes(1:2*ngeno,1:2*ngeno) = 0;
+for i = 1:ngeno
+    p_bit = (spectrum(2*i-1, 1:ngeno) ~= 0);
+    m_bit = (spectrum(2*i, 1:ngeno) ~= 0);
+    if( i == 20 )
+    end
+    for j = 1:ngeno
+        if( j  == i )
+            homologous_chromosomes(2*i-1,2*i-1) = ngeno;
+            homologous_chromosomes(2*i,2*i) = ngeno;
+            continue;
+        end
+        r_p_bit = (spectrum(j*2-1, 1:ngeno) ~= 0);
+        r_m_bit = (spectrum(j*2, 1:ngeno) ~= 0);
+        if( spectrum(j*2-1,i) ~= 0 )
+            if( spectrum(j*2,i) ~= 0 )
+                if( spectrum(i*2-1,j) ~= 0 )
+                    if( spectrum(i*2,j) ~= 0 )
+                        if( nnz(p_bit == r_p_bit) + nnz(m_bit == r_m_bit) >= nnz(p_bit == r_m_bit) + nnz(m_bit == r_p_bit) )
+                            homologous_chromosomes(2*i-1,j*2-1) = nnz(p_bit == r_p_bit);
+                            homologous_chromosomes(2*i,j*2) = nnz(m_bit == r_m_bit);
+                        else
+                            homologous_chromosomes(2*i-1,j*2) = nnz(p_bit == r_m_bit);
+                            homologous_chromosomes(2*i,j*2-1) = nnz(m_bit == r_p_bit);                    
+                        end
+                    else
+                        if( nnz(p_bit == r_p_bit) >= nnz(p_bit == r_m_bit) )
+                            homologous_chromosomes(2*i-1,j*2-1) = nnz(p_bit == r_p_bit);
+                        else
+                            homologous_chromosomes(2*i-1,j*2) = nnz(p_bit == r_m_bit);
+                        end
+                    end
+                else
+                    if( spectrum(i*2,j) ~= 0 )
+                        if( nnz(m_bit == r_p_bit) >= nnz(m_bit == r_m_bit) )
+                            homologous_chromosomes(2*i,j*2-1) = nnz(m_bit == r_p_bit);
+                        else
+                            homologous_chromosomes(2*i,j*2) = nnz(m_bit == r_m_bit);
+                        end
+                    else
+                        % no homologous binding
+                        if( debug == 1 )
+                            disp('non-symmetric binding');
+                        end
+                    end
+                end
+            else
+                if( spectrum(i*2-1,j) ~= 0 )
+                    if( spectrum(i*2,j) ~= 0 )
+                        if( nnz(p_bit == r_p_bit) >= nnz(m_bit == r_p_bit) )
+                            homologous_chromosomes(2*i-1,j*2-1) = nnz(p_bit == r_p_bit);
+                        else
+                            homologous_chromosomes(2*i,j*2-1) = nnz(m_bit == r_p_bit);
+                        end
+                    else
+                        homologous_chromosomes(2*i-1,j*2-1) = nnz(p_bit == r_p_bit);
+                    end
+                else
+                    if( spectrum(i*2,j) ~= 0 )
+                        homologous_chromosomes(2*i,j*2-1) = nnz(m_bit == r_p_bit);
+                    else
+                        % no homologous binding
+                        if( debug == 1 )
+                            disp('non-symmetric binding');
+                        end
+                    end
+                end
+            end
+        else
+            if( spectrum(j*2,i) ~= 0 )
+                if( spectrum(i*2-1,j) ~= 0 )
+                    if( spectrum(i*2,j) ~= 0 )
+                        if( nnz(p_bit == r_m_bit) >= nnz(m_bit == r_m_bit) )
+                            homologous_chromosomes(2*i-1,j*2) = nnz(p_bit == r_m_bit);
+                        else
+                            homologous_chromosomes(2*i,j*2) = nnz(m_bit == r_m_bit);
+                        end
+                    else
+                        homologous_chromosomes(2*i-1,j*2) = nnz(p_bit == r_m_bit);
+                    end
+                else
+                    if( spectrum(i*2,j) ~= 0 )
+                        homologous_chromosomes(2*i,j*2) = nnz(m_bit == r_m_bit);
+                    else
+                        % no homologous binding
+                        if( debug == 1 )
+                            disp('non-symmetric binding');
+                        end
+                    end
+                end
+            else
+                % no homologous binding
+            end
+        end
+    end
+end
+
+
+temp = (homologous_chromosomes + homologous_chromosomes')/2;
+Y = squareform(ngeno - temp);
+Z = linkage(Y, 'complete');
+T = cluster(Z,'cutoff', 2, 'criterion', 'distance');
+if( debug == 1 )
+    figure;
+    subplot(1,2,1);
+    [X, perm] = sort(T);    
+    spy(homologous_chromosomes(perm,perm), 1);
+    for i = 1:2*ngeno
+        for j = 1:2*ngeno
+            if( homologous_chromosomes(perm(i),perm(j)) > 0 )
+                text(i, j, num2str(ngeno - homologous_chromosomes(perm(i),perm(j))), 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'center', 'FontUnits', 'normalized', 'FontSize', 0.01);
+            end
+        end
+    end
+    set(gca,'XTick',1:ngeno*2);
+    set(gca,'XTickLabel',(num2cell(X)));
+    set(gca,'YTick',1:ngeno*2);
+    set(gca,'YTickLabel',(num2cell(perm)));    
+end
+
+parent(1:nind,1:nind) = 0;
+for i = 1:nind
+    father = family(i,3);
+    mother = family(i,4);
+    if( father > 0 )
+        parent(father, i) = -1;
+    end
+    if( mother > 0 )
+        parent(mother, i) = 1;
+    end
+end
+genoparent(1:ngeno,1:ngeno) = parent(genotyped, genotyped);
+
+
+for i = 1:ngeno
+    for j = i+1:ngeno
+        if( genoparent(i,j) ~= 0 )
+            if( ~any(ismember([T(2*i-1),T(2*i)], [T(2*j-1),T(2*j)])) )
+                pmax = 1;
+                qmax = 1;
+                max_coherence = 0;
+                for p = 1:2
+                    temp1 = find( T == T(2*i-2+p) );
+                    for q = 1:2
+                        temp2 = find( T == T(2*j-2+q) );                        
+                        for s = 1:length(temp1)
+                            for t = 1:length(temp2)
+                                if( homologous_chromosomes(temp1(s),temp2(t)) > max_coherence )
+                                    max_coherence = homologous_chromosomes(temp1(s),temp2(t));
+                                    pmax = p;
+                                    qmax = q;
+                                end
+                            end
+                        end
+                    end
+                end
+                if( max_coherence > 0 )
+                    c1 = T(2*i-2+pmax);
+                    c2 = T(2*j-2+qmax);
+                    if( c1 < c2 )
+                        T(T == c2) = c1;
+                    else
+                        T(T == c1) = c2;
+                    end
+                end
+            end
+        end
+    end
+end
+
+full_sib(1:nind, 1:nind, 1:nind) = 0;
+for i = 1:nind
+    father = family(i,3);
+    mother = family(i,4);
+    if( family(i,7) > 0 && father ~= 0 && mother ~= 0 )
+        full_sib(father, mother, i) = 1;
+        [father, mother, i]
+    end
+end
+
+
+for i = 1:nind
+    for j = 1:nind
+        if( ~any(full_sib(i,j,1:nind) > 0) )
+            continue;
+        end
+        index = (full_sib(i,j,genotyped) > 0);
+        if( ~any(index) )
+            error = 1;
+            disp('error in family indexing');
+            return;
+        end
+        sibs(1:ngeno*2) = 0;
+        for k = 1:ngeno
+            if( index(k) > 0 )
+                sibs(k*2-1) = T(k*2-1);
+                sibs(k*2) = T(k*2);
+            end
+        end
+        if( ~any(sibs > 0) )
+            error = 1;
+            disp('error in family indexing');
+            return;
+        end
+        if( length(unique(sibs(sibs>0))) <= 4 )
+            continue;
+        end
+        if( nnz(index) < 3 )
+            error = 1;
+            disp('error in family indexing');
+            return;
+        end
+        pmax = 0;
+        qmax = 0;
+        max_coherence = 0;
+        for p = 1:ngeno
+            if( index(p) <= 0 )
+                continue;
+            end
+            for q = p+1:ngeno
+                if( index(q) <= 0 )
+                    continue;
+                end
+                for r = 1:2
+                    for s = 1:2
+                        if( T(p*2+1-r) == T(q*2+1-s)
+                        temp1 = (T == T(p*2+1-r));
+                        temp2 = (T == T(q*2+1-s));
+                        temp3 = max(max(homologous_chromosomes(temp1,temp2)));
+                        if( temp3 > max_coherence )
+                            max_coherence = temp3;
+                            pmax = p*2+1-r;
+                            qmax = q*2+1-s;
+                        end
+                    end
+                end                
+            end
+        end
+        if( pmax ~= 0 && qmax ~= 0 )
+            c1 = T(pmax);
+            c2 = T(qmax);
+            if( c1 < c2 )
+                T( T == c2 ) = c1;
+            else
+                T( T == c1 ) = c2;
+            end
+        else
+            if( debug == 1 )
+                disp('cannot consolidate siblings');
+            end
+        end
+    end
+end
+
+
+if( debug == 1 )
+    subplot(1,2,2);
+    [X, perm] = sort(T);
+    spy(homologous_chromosomes(perm,perm), 1);
+    for i = 1:2*ngeno
+        for j = 1:2*ngeno
+            if( homologous_chromosomes(perm(i),perm(j)) > 0 )
+                text(i, j, num2str(ngeno - homologous_chromosomes(perm(i),perm(j))), 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'center', 'FontUnits', 'normalized', 'FontSize', 0.01);
+            end
+        end
+    end
+    set(gca,'XTick',1:ngeno*2);
+    set(gca,'XTickLabel',(num2cell(X)));
+    set(gca,'YTick',1:ngeno*2);
+    set(gca,'YTickLabel',(num2cell(perm)));    
+end
+
+if( debug == 1 )
+    show_spec(1:ngeno*2+1,1:ngeno+1) = 0;
+    show_spec(1:ngeno*2,1:ngeno) = spectrum;
+    for i = 1:ngeno
+        show_spec(i*2-1:i*2,ngeno+1) = printid(i);
+    end
+    show_spec(ngeno*2+1,1:ngeno) = printid(1:ngeno);
+    show_spec(1:ngeno*2, ngeno+2) = T;
+    show_spec
+end
+
+chr_dist = T;
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

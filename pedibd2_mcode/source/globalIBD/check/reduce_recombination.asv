@@ -1,0 +1,33 @@
+
+function [new_alleles, error] = reduce_recombination(alleles, family)
+
+error = 0;
+new_alleles = []
+n_seg = length(alleles);
+
+
+if( n_seg == 1 )
+    new_alleles{1} = alleles{1};
+    return;
+end
+
+
+for i = 2:n_seg
+    ref_alleles = [];
+    for j = 1:5
+        if( i - j > 0 )
+            ref_alleles{j} = alleles{i-j};
+        else
+            break;
+        end
+    end
+    [new_alleles{i}, error] = reduce_recombination1seg(ref_alleles, alleles{i}, family);
+    if( error ~= 0 )
+        return;
+    end
+end
+
+
+
+end
+

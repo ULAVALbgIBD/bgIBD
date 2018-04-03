@@ -1,0 +1,63 @@
+% double chain
+
+function ep = id_condensed_generate_emission_genotype(freq, is, ms, te)
+
+
+e = id_condensed_generate_emission_genotype_nonmissing(freq, is);
+
+num = length(is(1,:));
+num_es = 2^num;
+num_is = length(is(:,1));
+
+% typing error emission
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+p = [0.5,0.5];
+
+er(1:num_es) = 0;
+code(1:num) = 1;
+
+while(1)
+    shift = 1;
+    prob = 1;
+    es = 1;
+    for i = 1:num
+        if( shift == 1 )
+            if( code(i) == 1 )
+                code(i) = 2;
+                shift = 0;
+            else
+                code(i) = 1;
+            end
+        end
+        es = es + code(i) * 2^(num-i);
+        prob = prob * p(code(i));
+    end
+    er(es) = prob;
+    if( shift == 1 )
+        break;
+    end
+end
+
+for i = 1:num_is
+    for j = 1:num_es
+    end
+end
+
+% add effect of missing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+for i = g11:g22
+    for j = g11:g22
+        ep(ibd0, (i-1)*3 + j) = nonmissing * ep(ibd0, (i-1)*3 + j);
+        ep(ibd1, (i-1)*3 + j) = nonmissing * ep(ibd1, (i-1)*3 + j);
+        ep(ibd2, (i-1)*3 + j) = nonmissing * ep(ibd2, (i-1)*3 + j);
+    end 
+end
+
+ep(ibd0,g0) = 1 - nonmissing;
+ep(ibd1,g0) = 1 - nonmissing;
+ep(ibd2,g0) = 1 - nonmissing;
+
+end
+
+

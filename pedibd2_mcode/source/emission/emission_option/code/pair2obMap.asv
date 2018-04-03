@@ -1,0 +1,85 @@
+function [pair2ob missing] = pair2obMap(eo, option)
+
+genotype2pair = eo.genotype2pair;
+allele2genotype = eo.allele2genotype;
+genotype2pair = eo.genotype2pair;
+g0 = eo.pair_missing_code;
+
+pair2ob(1:max(max(genotype2pair))) = 0;
+% initial assignment is valid
+
+g11 = allele2genotype(1,1);
+g12 = allele2genotype(1,2);
+g22 = allele2genotype(2,2);
+
+if( option == 1 )
+    
+    map(1:max(max(genotype2pair))) = 1:max(max(genotype2pair));
+    missing = g0;
+    
+end
+
+if( option == 2 )
+
+
+    ibs0 = 1;
+    ibs1 = 2;
+    ibs2 = 3;
+    missing = 4;
+
+    g11 = 1;
+    g12 = 2;
+    g22 = 3;
+
+
+    map(genotype2pair(g11,g11)) = ibs2;
+    map(genotype2pair(g11,g12)) = ibs1;
+    map(genotype2pair(g11,g22)) = ibs0;
+    map(genotype2pair(g12,g11)) = ibs1;
+    map(genotype2pair(g12,g12)) = ibs2;
+    map(genotype2pair(g12,g22)) = ibs1;
+    map(genotype2pair(g22,g11)) = ibs0;
+    map(genotype2pair(g22,g12)) = ibs1;
+    map(genotype2pair(g22,g22)) = ibs2;
+
+end
+
+if( option == 3 )
+    
+    ibs0 = 1;
+    ibs1 = 2;
+    ibs2_homo = 3;
+    ibs2_hete = 4;
+    missing = 5;
+    
+    g11 = 1;
+    g12 = 2;
+    g22 = 3;
+
+    map(genotype2pair(g11,g11)) = ibs2;
+    map(genotype2pair(g11,g12)) = ibs1;
+    map(genotype2pair(g11,g22)) = ibs0;
+    map(genotype2pair(g12,g11)) = ibs1;
+    map(genotype2pair(g12,g12)) = ibs2;
+    map(genotype2pair(g12,g22)) = ibs1;
+    map(genotype2pair(g22,g11)) = ibs0;
+    map(genotype2pair(g22,g12)) = ibs1;
+    map(genotype2pair(g22,g22)) = ibs2;
+       
+end
+
+map(g0) = missing;
+
+% last position for missing
+
+end
+
+
+
+
+
+
+
+
+
+

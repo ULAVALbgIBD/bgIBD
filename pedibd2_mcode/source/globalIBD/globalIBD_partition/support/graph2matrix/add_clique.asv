@@ -1,0 +1,27 @@
+
+function clique_config = add_clique(clique_config, clique_seed, clique_expand, rep)
+
+    
+    if( isempty(clique_config) )
+        clique_config.num = 0;
+    end
+    
+    % increase the number by 1
+    clique_config.num = clique_config.num + 1;
+    clique_config.
+    
+    
+    clique = [clique_seed, clique_expand];
+    temp = sum(clique_assignment(:, clique), 1);
+    full_assigned = clique(temp == 2);
+    if( isempty(full_assigned) )
+        clique_config = assign_clique(clique_config, clique, rep);
+    else
+        % if part of clique fully assigned, assign the remaining
+        clique_config = assign_clique(clique_config, setdiff(clique, full_assigned), rep);
+    end
+    
+
+    
+end
+

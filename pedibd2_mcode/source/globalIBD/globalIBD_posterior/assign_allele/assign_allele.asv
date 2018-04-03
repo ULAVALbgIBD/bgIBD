@@ -1,0 +1,37 @@
+function  assign_allele( index, likelihood, max_index )
+
+global output_complexity;
+global map;
+global assignment;
+global pos_IBD;
+global pos_IBD1;
+global max_assignment;
+global max_likelihood;
+global pre_all;
+
+if( index > max_index )
+    return;
+end
+
+p(1:2) = map.paternal_alleles(current,1:2);
+m(1:2) = map.maternal_alleles(current,1:2);
+
+
+if( map.relevance(index) == 1 )
+
+
+
+end
+
+if( index < max_index )
+    
+end
+
+if( index == max_index )
+    
+end
+
+
+
+end
+

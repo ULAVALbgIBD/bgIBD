@@ -1,0 +1,15 @@
+function ep_merge_ibs = id_condensed_generate_emission_ibs_genotype(ep_merge_genotype)
+
+% only  for 4 alleles
+
+num_is = length(ep_merge_genotype(:,1));
+
+ep_merge_ibs(1:num_is, 1:4) = 0;
+
+ep_merge_ibs(1:num_is,4) = ep_merge_genotype(:,17);
+
+
+
+end
+
+

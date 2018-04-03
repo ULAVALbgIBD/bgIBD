@@ -1,0 +1,155 @@
+
+function [output_p_clique output_m_clique error] = eigen_partition(p_clique, m_clique, neighbor1, ibd12)
+
+% will be equivalent to eigenvector, after first iteration
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% p_clique and m_clique will never shrink
+% all predisposed cliques are preserved
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ibd2 nodes will receive equal vote from all nodes, because they are neutral
+% ibd0 nodes will receive no vote, if included
+% ibd1 nodes will receive vote from its own clique
+
+% let deterministic nodes vote first
+
+[num, c] = size(ibd12);
+if( num <= 0 || c ~= num )
+    error = 1;
+    disp('error in neighborhood affinity');
+    return;
+end
+
+error = 0;
+output_p_clique = [];
+output_m_clique = [];
+
+if( isempty(neighbor1) )
+    error = 1;
+    disp('neighborhood empty');
+    return;
+end
+
+if( ~isempty(p_clique) )
+    if( ~all(ismember(p_clique, neighor1)) )
+        error = 1;
+        disp('invalid kinship partition');
+        return;
+    end
+end
+
+if( ~isempty(m_clique) )
+    if( ~all(ismember(m_clique, neighbor1)) )
+        error = 1;
+        disp('invalid kinship partition');
+        return;
+    end
+end
+
+neighbor_bit(1:num) = 0;
+neighbor_bit(neighbor1) = 1;
+p_bit(1:num) = 0;
+p_bit(p_clique) = 1;
+m_bit(1:num) = 0;
+m_bit(m_clique) = 1;
+cluster_vote(1:num) = 0;
+
+if( any(p_bit) )
+    for i = 1:num
+        if( p_bit(i) == 1 )
+            temp = ibd12(i,1:num) == 1;
+            affinity = neighbor_bit & temp;
+            repellent = neighbor_bit & (~temp);
+            cluster_vote(affinity) = cluster_vote(affinity) + 1;
+            cluster_vote(repellent) = cluster_vote(repellent) - 1;
+        end
+    end
+end
+
+if( any(m_bit) )
+    for i = 1:num
+        if( m_bit(i) == 1 )
+            temp = ibd12(i,1:num) == 1;
+            affinity = neighbor_bit & temp;
+            repellent = neighbor_bit & (~temp);
+            cluster_vote(affinity) = cluster_vote(affinity) - 1;
+            cluster_vote(repellent) = cluster_vote(repellent) + 1;            
+        end
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% let the remaining nodes vote
+% guess their membership from the beginning
+
+for i = 1:num
+    if( neighbor_bit(i) == 1 )
+        if( ~p_bit(i) && ~m_bit(i) )
+            temp = ibd12(i,1:num) == 1;
+            affinity = neighbor_bit & temp;
+            repellent = neighbor_bit & (~temp); 
+            mean1 = mean(cluster_vote(affinity));
+            mean2 = mean(cluster_vote(repellent));
+            if( mean1 >= mean2 )
+                cluster_vote(affinity) = cluster_vote(affinity) + 1;
+                cluster_vote(repellent) = cluster_vote(repellent) - 1;
+            else
+                cluster_vote(affinity) = cluster_vote(affinity) - 1;
+                cluster_vote(repellent) = cluster_vote(repellent) + 1;
+            end                
+        end
+    end
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+output_p_bit(1:num) = 0;
+output_p_bit(p_bit) = 1;
+output_m_clique = m_clique;
+
+for i = 1:num
+    if( neighbor_bit(i) == 1 )
+        if( ~p_bit(i) && ~m_bit(i) ) 
+            temp = ibd12(i,1:num) == 1;
+            affinity = neighbor_bit & temp;
+            repellent = neighbor_bit & (~temp);
+            mean1 = 0;
+            mean2 = 0;
+            if( any(affinity) )
+                mean1 = mean(cluster_vote(affinity));
+            end
+            if( any(repellent) )
+                mean2 = mean(cluster_vote(repellent));
+            end
+            if( mean1 >= mean2 ) 
+                output_p_clique = [output_p_clique, i];
+            end
+            if( mean1 < mean2 )
+                output_m_clique = [m_clique, neighbor12(i)];
+            end
+        end
+    end
+end
+
+output_p_clique = find(output_p_bit);
+output_m_clique = find(
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+end
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,54 @@
+function [ x x_offset y y_offset ] = generate_individual_positions( assignment, step )
+
+
+
+    alleles = unique(assignment(:,1:2));
+    num = length(alleles);
+    n_ind = length(assignment(:,1));
+
+
+    
+    
+    x(1:n_ind) = 0;
+    y(1:n_ind) = 0;
+    x_offset(1:n_ind) = 0;
+    y_offset(1:n_ind) = 0;
+    
+    if( step <= 0 )
+        return;
+    end
+    if( n_ind <= 0 )
+        return;
+    end
+    
+    % caculate the occurence of each allele in the family
+    % get the cell identity of each individual    
+    count(1:num,1:num) = 0;
+    order(1:n_ind) = 0;
+    for i = 1:n_ind
+        p = assignment(i,1);
+        q = assignment(i,2);
+        x(i) = find(alleles == p);
+        y(i) = find(alleles == q);
+
+        count(x(i),y(i)) = count(x(i),y(i)) + 1;
+        count(y(i),x(i)) = count(y(i),x(i)) + 1;
+        order(i) = count(x(i),y(i));
+    end
+    
+
+    
+    width = step;
+    len = step;
+    max_volume = max(max(count));
+    markersize = ;
+
+
+    % get the position of each individual in a cell
+    for i = 1:n_ind        
+        [x_offset(i), y_offset(i)] = get_cell_position(width, len, count(x(i),y(i)), order(i), markersize);
+    end
+
+
+end
+

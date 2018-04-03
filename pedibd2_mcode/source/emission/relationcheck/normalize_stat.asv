@@ -1,0 +1,30 @@
+
+function value = normalize_stat(dist, ob)
+
+    len = length(dist);
+    if( len <= 0 )
+        disp('error in emission probability');
+        return;
+    end
+    if( ob > len )
+        disp('error in emission probability');
+        return;
+    end
+    if( sum(dist) ~= 1 )
+        disp('error in emission probability');
+        return;
+    end
+    
+    mu = 0;
+    std = 0;
+    va = 0;
+    sum1 = 0;
+    for i = 1:len
+        sum1 = sum1 + i * dist(i);
+    end
+    mu = sum1/len;
+    for i = 1:len
+        va = va + (i-mu)^2 * dist(i);
+    end
+
+end

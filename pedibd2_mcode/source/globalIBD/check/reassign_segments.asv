@@ -1,0 +1,44 @@
+function [new_alleles error] = reassign_segments(alleles, family)
+
+error = 0;
+new_alleles = [];
+
+
+if( isempty(family) )
+    error = 1;
+    disp('error in family structure');
+    return;
+end
+
+if( isempty(alleles) )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+[n_ind, cols] = size(family);
+if( n_ind <= 0 || cols < 12 )
+    error = 1;
+    disp('error in family structure');
+    return;
+end
+
+n_seg = length(alleles);
+
+for i = 1:n_seg
+    seg_assignment = alleles{i};
+    [nrows, ncols] = size(seg_assignment);
+    if( nrows ~= n_ind || ncols ~= 2 )
+        error = 1;
+        disp('error in global IBD');
+        return;
+    end
+    [new_alleles{i}, error = reassign_1segment(seg_assignment, family);
+end
+
+
+
+end
+
+
+

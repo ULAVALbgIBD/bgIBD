@@ -1,0 +1,82 @@
+function [final_p_clique, final_m_clique, final_pm_clique, error] =  segregate_homologous(index, pairs, triples, kinship2, posterior, posteriorIBD1, tolerance)
+
+final_p_clique = [];
+final_m_clique = [];
+final_pm_clique = [];
+error = 0;
+[num, c] = size(pairs);
+if( num <= 0 || num ~= c )
+    error = 1;
+    disp('error in input pairs');
+    return;
+end
+
+
+
+ibd1 = (pairs == 1);
+ibd2 = (pairs == 2);
+ibd12 = (pairs >= 1);
+
+neighbor1 = find(ibd1(index,:) == 1);
+neighbor2 = find(ibd2(index,:) == 1);
+neighbor12 = find(ibd12(index,:) == 1);
+
+if( ~isempty(neighbor1) )
+    [p_clique_forced, m_clique_forced error] = kinship_partition(index, neighbor1, kinship2, posteriorIBD1);
+    if( error ~= 0 )
+        disp('impossible chromosome sharing given this family structure');
+        return;
+    end
+else
+    p_clique_forced = [];
+    m_clique_forced = [];
+end
+
+fused = ;
+
+valid_triples = triples.valid_triples;
+triple_viewpair = triples.triple_viewpair;
+for i = 1:num
+    for j = 1:num
+        triple_index = valid_triples(index,i,j);
+        if( ibd1(index,i) && ibd1(index,j) && ibd1(i,j) )
+            if( triple_index > 0 )
+                if( triple_viewpair(index,i,j) > 0 )
+                    ibd12(i,j) = 1;
+                end
+                if( triple_viewpair(index,i,j) < 0 )
+                    ibd12(i,j) = 0;
+                end
+            end
+        end
+    end
+end
+
+if( ~isempty(neighbor1) )
+    [p_clique_expanded, m_clique_expanded error] = eigen_partition(p_clique_forced, m_clique_forced, neighbor1, ibd12);
+    if( error ~= 0 )
+        disp('error in DNAphoresis');
+        return;
+    end
+else
+    p_clique_expanded = p_clique_forced;
+    m_clique_expanded = m_clique_forced;
+end
+
+final_p_clique = p_clique_expanded;
+final_m_clique = m_clique_expanded;
+final_pm_clique = neighbor2;
+
+if( isempty(final_pm_clique) )
+    error = 1;
+    disp('error in clique partition seeding');
+    return;
+end
+
+end
+
+
+
+
+
+

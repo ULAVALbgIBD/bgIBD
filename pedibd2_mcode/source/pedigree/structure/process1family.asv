@@ -1,0 +1,165 @@
+function [output_family, error] = process1family(family)
+
+        error = 0;
+        output_family = [];
+
+        [rows, cols] = size(family);
+        if( rows <= 0 )
+            error = 1;
+            disp('empty family');
+            return;
+        end
+
+        error = check_family(family);
+        if( error ~= 0 )
+            return;
+        end
+        
+        f_id = unique(family(:,1));
+        if( length(f_id) ~= 1 )
+            error = 1;
+            disp('error in processing families');
+            return;
+        end
+        
+        maxid = max(max(family(:,2:4)));        
+        nonmissing(1:maxid) = 0;
+        assigned(1:maxid) = 0;
+        sex(1:maxid) = 0;
+        original_id(1:maxid) = 0;
+        
+        % maintain the partial order that parents proceeds children
+        % add all seen ids to the list
+        
+        % sequential order
+        order = 0;
+        for j = 1:rows
+            id = family(j,2);
+            nonmissing(id) = j;
+            for k = [2,3,4]
+                id = family(j,k);
+                if( id ~= 0 )
+                    if( assigned(id) == 0 )
+                        order = order + 1;
+                        assigned(id) = order;
+                        original_id(order) = id;
+                        if( k == 2 )
+                            sex(order) = family(j,5);
+                        end
+                        if( k == 3 )
+                            sex(order) = 1;
+                        end
+                        if( k == 4 )
+                            sex(order) = 2;
+                        end
+                    else
+                        order = assigned(id);
+                        if( k == 2 )
+                            if( sex(order) ~= family(j,5) )
+                                error = 1;
+                            end
+                        end
+                        if( k == 3 )
+                            if( sex(order) ~= 1 )
+                                error = 1;
+                            end
+                        end
+                        if( k == 4 )
+                            if( sex(order) ~= 2 )
+                                error = 1;
+                            end
+                        end
+                        if( error ~= 0 )
+                            disp('error in family structure');
+                            disp('conflicts in parents sex');
+                            return;
+                        end
+                    end
+                end
+            end
+        end
+                
+        % reordered family
+        recodeF = [];
+        recodeF(1:order,1:8) = 0;
+        recodeF(1:order,1) = f_id;
+        recodeF(1:order,2) = 1:order;   
+        recodeF(1:order,5) = sex(1:order);       
+        recodeF(1:order,8) = orginal_id(1:order);
+        recodeF(1:order,12) = f_id;
+        
+        
+
+        % update disease status column 6
+        % update parents ids
+        
+        for j = 1:rows % assign all 2-column individuals
+            order = assigned(family(j,2));
+            if( family(j,3) ~= 0 )
+                father_id = assigned(family(j,3));
+            else
+                father_id = 0;
+            end
+            if( family(j,4) ~= 0 )
+                mother_id = assigned(family(j,4));
+            else
+                mother_id = 0;
+            end
+            recodeF(order,3:4) = [father_id, mother_id];
+            if( recodeF(order,5) ~= recodeF(j,5) )
+                error = 1;
+                disp('error in processing families');
+            end
+            recodeF(order,5:6) = family(j,5:6);
+            recodeF(order,7) = family(j,7);
+            recodeF(order,8) = family(j,2);
+            temp3(id,11) = temp1(j);
+            if(temp3(id,12) ~= temp(j,1))
+                error = 1;
+                disp('error in processing pedgree');
+                return;
+            end
+        end
+
+        temp3(:,generation) = 0;
+
+        change = 1;
+        while( change == 1 )
+            change = 0;
+            for k = 1:3
+                for j = 1:length(temp3(:,1))
+                    father_id = temp3(j,3);
+                    mother_id = temp3(j,4);
+                    if( father_id ~= 0 )
+                        if( temp3(j,generation) < 1 + temp3(father_id,generation) )
+                            temp3(j,generation) = 1 + temp3(father_id,generation);
+                            change = 1;
+                        end
+                    end
+                    if( mother_id ~= 0 )
+                        if( temp3(j,generation) < 1 + temp3(mother_id,generation) )
+                            temp3(j,generation) = 1 + temp3(mother_id,generation);
+                            change = 1;
+                        end
+                    end
+                end
+            end
+        end
+        
+        
+        % reorder according to generation
+        [b,ix] = sort(temp3(:,generation));
+        map(ix) = 1:length(ix);
+        temp4 = temp3(ix,1:12);
+        for i = 1:length(ix)
+            for j = 2:4
+                if( temp4(i,j) ~= 0 )
+                    temp4(i,j) = map(temp4(i,j));
+                end
+            end
+        end
+
+
+end
+
+

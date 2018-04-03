@@ -1,0 +1,57 @@
+function [ family_genotype error ] = pedigree_frq_entry(pedigree, expanded_genotype, all_families)
+
+
+
+error = 0;
+family_genotype = [];
+
+[nind, ncol] = size( expanded_genotype );
+[r, c] = size( pedigree );
+
+if( nind <= 0 || nind ~= r )
+    disp('error in genotype data');
+    error = 1;
+    return;
+end
+
+if( c < 12 )
+    error = 1;
+    disp('error in pedigree structure');
+    return;
+end
+
+if( ncol < 6 || mod(ncol-6, 2) ~= 0 )
+    error = 1;
+    disp('error in genotype data');
+    return;
+end
+
+loci = length(all_data(1,7:end))/2;
+
+gen(1:num,1:loci,1:2) = 0;
+gen(1:num,1:loci,1) = all_data(1:num,7:2:end);
+gen(1:num,1:loci,2) = all_data(1:num,8:2:end);
+
+% all id mapped to the correct location in the genotype file
+% untyped individuals are paddled with all 0's
+
+family_genotype = generate_pedigree_frq(gen, all_families);
+
+nfam = length(family_genotype);
+if( nfam <= 0 || nfam ~= length(all_families) )
+    error = 1;
+    disp('error in obtaining genotype for each family');
+    return;
+end
+for i = 1:nfam
+    [d1, d2, d3] = size(family_genotype{i});
+    if( d1 ~= length(all_families{i}.pedigree_range_full) || d2 ~= loci || d3 ~= 2 )
+        error = 1;
+        disp('error in obtaining genotype for each family');
+    end
+end
+
+
+
+end
+

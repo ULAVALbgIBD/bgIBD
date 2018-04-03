@@ -1,0 +1,30 @@
+function tp = generate_transition_single(pt, r)
+
+ibd0 = 1;
+ibd1 = 2;
+
+tp(ibd0:ibd1, ibd0:ibd1) = 0;
+
+p(ibd0:ibd1) = 0;
+
+sum_prio = 0;
+sum_tran = 0;
+for i = 1:length(pt)
+    path = pt(i);
+    prio = 2*((1/2)^path);
+    tran = (1-r)^path;
+    
+    sum_tran = sum_tran + prio*tran;
+    sum_prio = sum_prio + prio;
+end
+
+p(ibd0) = sum_prio;
+p(ibd1) = 1 - p(ibd0);
+tp(ibd1,ibd1) = sum_tran/sum_prio;
+
+
+tp(ibd1,ibd0) = 1 - tp(ibd1,ibd1);
+tp(ibd0,ibd1) = (p(ibd1) - tp(ibd1,ibd1)p(ibd1))/p(ibd0);
+
+
+end

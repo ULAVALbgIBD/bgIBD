@@ -1,0 +1,33 @@
+function [error] = check_kinship1family(family, kinship)
+
+
+    error = 0;
+    if( isempty(family) )
+        error = 1;
+        return;
+    end
+    family_range = family.familiy_range;
+    nind = length(family_range);
+    if( nind < 2 && ~isempty(kinship{i}) )
+        error = 1;
+        return;
+    end
+    if( nind >= 2 )
+        [r, c] = size(kinship{i});
+        if( r ~= nind || c ~= nind )
+            error = 1;
+            return;
+        end
+    end
+
+
+
+
+
+end
+
+
+
+
+
+

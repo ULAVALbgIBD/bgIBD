@@ -1,0 +1,103 @@
+function [input output error] = process_allfamilies(pedigree, input, parameters, expanded_genotype, option)
+
+    global debug_mode;
+    error = 0;
+    state_code = 0;
+    % state_code 1: inheritance paths
+    % state_code 2: pairwise IBD
+    % state_code 4: nonparametreic score
+    % state_code 8: haplotype 
+    % state_code 16: pairs for global IBD
+    % state_code 32: merge global IBD
+    % state_code 64: global IBD
+    
+    
+    for family_id = 1:length(input.family_range)       
+        
+        state_code = 0;
+  
+        % descent graph & kinship
+        if( bitand(option,1) == 1 && error == 0 )
+            [all_inheritance, , input.kinship2{family_id} error] = generate_inheritance_1family(pedigree.structure, input.family_range{family_id});
+            if( error == 0 )
+                state_code = bitor(state_code, 1);
+            end
+        end
+        input.all_inheritance{family_id} = all_inheritance;
+        input.kinship{family_id} = all
+        
+        % posterior & viterbi
+        if( bitand(option,1) == 1 && error == 0 && bitand(state_code,1) == 1 )           
+            [input.oblist{family_id} input.emission{family_id}, output.paths.posterior{family_id} output.paths.posteriorIBD1{family_id} output.paths.viterbi{family_id} error] = posterior_decode_1family(pedigree.structure, input.family_range{family_id}, input.all_inheritance{family_id}, parameters, expanded_genotype, input.pedigree_frq);
+            if( error == 0 )
+                state_code = bitor(state_code, 2);
+            end
+        end
+        
+        % segmentation
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code,2) == 2 )
+            [pairs, error] = generate_consistent_pairs(output.paths.viterbi{family_id}, output.paths.posterior{family_id}, output.paths.posteriorIBD1{family_id}, input.family_range{family_id});
+            if( error == 0 )
+                state_code = bitor(state_code, 16);
+            end
+        end
+        
+        % global IBD
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code,16) == 16 )        
+            [output.assignment{family_id} error] = generate_consistent_assignment_2methods(pairs, input.family_range{family_id}, pedigree, 0, input.kinship2{family_id}, option );
+            if( error == 0 )
+                state_code = bitor(state_code, 64);
+            end
+        end
+        
+        % merge assignment 
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code,64) == 64 )
+            [output.merged_assignment{family_id} error] = merge_segments(output.assignment{family_id});
+            if( error == 0 )
+                state_code = bitor(state_code, 32);
+            end
+        end
+        
+        % relabel founder alleles to reduce recombination
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code, 32) == 32 )
+            [output.merged_assignment{family_id}.alleles_all error] = reassign_segments(output.merged_assignment{family_id}.alleles_all, input.family_range{family_id}.structure);
+            if( error == 0 )
+                state_code = bitor(state_code, 128);
+            end
+        end
+        
+        % linkage score
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code,128) == 128 )
+            
+            % calculating linkage score
+            [output.merged_assignment{family_id}.score error] = non_parametric_linkage(output.merged_assignment{family_id}.alleles_all, input.family_range{family_id}.structure);
+            if( error == 0 )
+                state_code = bitor(state_code, 4);
+            end
+        end
+        
+        % haplotyping
+        if( bitand(option,3) == 3 && error == 0 && bitand(state_code,128) == 128 )           
+            genotype_input = expanded_genotype((input.family_range{family_id}.pedigree_range_full), :);
+            [output.inheritance{family_id}, output.haplotype{family_id}, output.consistency{family_id}] = assign_haplotype(output.merged_assignment{family_id}, genotype_input, input.family_range{family_id});
+            if( error == 0 )
+                state_code = bitor(state_code, 8);
+            end
+        end       
+        
+        disp(' ');
+        if( debug_mode == 1 )
+            % in case of debug_mode, run only one family, export pairs
+            output.paths.pairs = pairs;
+            return;
+        end
+        
+    end
+    
+
+    
+end
+
+
+
+

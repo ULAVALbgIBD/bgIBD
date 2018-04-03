@@ -1,0 +1,103 @@
+function [int index error] = merge_intervals(int1, int2)
+
+error = 0;
+int = [];
+
+[r1, c1] = size(int1);
+[r2, c2] = size(int2);
+
+if( r1 <= 0 || r2 <= 0 || c1 ~= 2 || c2 ~= 2 )
+    error = 1;
+    disp('error in chromsome segmentation');
+    return;
+end
+
+break1(1:r1-1) = 0;
+break2(1:r2-1) = 0;
+first = 1;
+if( first ~= int1(1,1) || first ~= int2(1,1) )
+    error = 1;
+    disp('error in chromosome segmentation');
+    return;
+end
+last = int1(r1,2);
+if( last ~= int2(r2,2) )
+    error = 1;
+    disp('error in chromosome segmentation');
+    return;
+end
+
+for i = 1:r1-1
+    break1(i) = int1(i,2) + 0.5;
+    if( break1(i) ~= int1(i+1,1) - 0.5 )
+        error = 1;
+        disp('error in chromosome segmentation');
+        return;
+    end
+end
+
+for j = 1:r2-1
+    break2(i) = int2(i,2) + 0.5;
+    if( break2(i) ~= int2(i+1,1) - 0.5 )
+        error = 1;
+        disp('error in chromosome segmentation');
+        return;
+    end
+end
+
+breaks = unique([break1,break2]);
+breaks = sort(breaks, 'ascend');
+
+len = length( breaks );
+
+if( len < r1 || len < r2 )
+    error = 1;
+    disp('error in combining intervals');
+    return;
+end
+
+if( breaks(1) < first + 0.5 || breaks(len) > last - 0.5 )
+    error = 1;
+    disp('error in combining intervals');
+    return;
+end
+
+int(1:len+1,1:2) = 0;
+int(1,1) = first;
+int(len+1,2) = last;
+
+for i = 1:len
+    int(i,2) = breaks(i) - 0.5;
+    int(i+1,1) = breaks(i) + 0.5;
+end
+
+index(1:len+1) = 0;
+
+j = 1;
+
+for i = 1:len + 1
+    if( 
+end
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

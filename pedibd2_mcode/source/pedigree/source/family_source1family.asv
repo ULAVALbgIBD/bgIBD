@@ -1,0 +1,95 @@
+function error = family_source1family(family)
+    
+    if( isempty(family) )
+        error = 1;
+        disp('empty family');
+        return;
+    end
+
+    [rows, cols] = size(family);
+    if( rows <= 0 || cols < 12 )
+        error = 1;
+        disp('error in family structure');
+        return;
+    end
+    
+    nind = rows;
+    
+    ids = unique(family(:,2:4));
+    if( max(ids) > nind || min(ids) < 0 )
+        error = 1;
+        disp('error in family structure');
+        return;
+    end
+    
+    % nearest genotyped ancestor
+    nga(1:nind,1:nind) = 0;
+    % founder ancestor
+    fa(1:nind,1:nind) = 0;
+    % all ancestor
+    aa(1:nind,1:nind) = 0;
+    
+    genotyped(1:nind) = 0;
+    founder(1:nind) = 0;
+    for i = 1:nind
+        id = family(i,2);
+        father = family(i,3);
+        mother = family(i,4);
+        if( id ~= i )
+            error = 1;
+            disp('error in family indexing');
+            return;
+        end
+        if( father == 0 && mother == 0 )
+            founder(id) = 1;
+            
+    end
+    
+    for j = 1:length(temp)
+        source_list{temp(j),1} = [];
+        source_list{temp(j),2} = [];
+        direct_source{temp(j),1} = [];
+        direct_source{temp(j),2} = [];
+        ancestors{temp(j)} = j;
+        father = family(j,3);
+        mother = family(j,4);
+        if( father ~= 0 )
+            source_list{temp(j),1} = union(source_list{temp(father),1}, source_list{temp(father),2});
+        else
+            source_list{temp(j),1} = -j;
+        end
+        if( mother ~= 0 )
+            source_list{temp(j),2} = union(source_list{temp(mother),1}, source_list{temp(mother),2});
+        else
+            source_list{temp(j),2} = j;
+        end
+        if( father ~= 0 )
+            if( family(father,7) == 1 )
+                direct_source{temp(j),1} = [-father, father];
+            else
+                direct_source{temp(j),1} = union(direct_source{temp(father),1}, direct_source{temp(father),2});
+            end
+        else
+            direct_source{temp(j),1} = -j;
+        end
+        if( mother ~= 0 )
+            if( family(mother,7) == 1 )
+                direct_source{temp(j),2} = [-mother, mother];
+            else
+                direct_source{temp(j),2} = union(direct_source{temp(mother),1}, direct_source{temp(mother),2});
+            end
+        else
+            direct_source{temp(j),2} = j;
+        end
+        if( father ~= 0 )
+            ancestors{temp(j)} = union(ancestors{temp(father)}, ancestors{temp(j)});
+        end
+        if( mother ~= 0 )
+            ancestors{temp(j)} = union(ancestors{temp(mother)}, ancestors{temp(j)});
+        end
+        if( family(j,7) == 1 )
+            relevance(temp(ancestors{temp(j)})) = 1;
+        end
+    end
+    
+end

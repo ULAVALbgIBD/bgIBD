@@ -1,0 +1,85 @@
+function [new_alleles, error] = reassign_1segment(alleles, family)
+
+error = 0;
+new_alleles = [];
+
+if( isempty(alleles) )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+if( isempty(family) )
+    error = 1 ;
+    disp('error in family structure');
+    return;
+end
+
+[nind, ncols] = size(family);
+if( nind <= 0 || ncols < 12 )
+    error = 1;
+    disp('error in family structure');
+    return;
+end
+
+[r, c] = size( alleles );
+if( r ~= nind || c ~= 2 )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+
+ids = unique(alleles);
+if( any(abs(ids) > nind) )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+for i = 1:nind
+    if( alleles(i,1) == i || alleles(i,2) == -i )
+        error = 1;
+        disp('error in global IBD');
+        return;
+    end
+    % circular relationship
+end
+
+founder(1:nind) = 0;
+
+for i = 1:nind
+    if( family(i,3) == 0 && family(i,4) == 0 )
+        founder(i) = 1;
+    end
+end
+
+founder_alleles = unique(alleles(founder==1));
+if( length(founder_alleles) ~= nnz(founder) )
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

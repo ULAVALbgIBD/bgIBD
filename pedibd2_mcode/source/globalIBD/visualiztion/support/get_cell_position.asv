@@ -1,0 +1,35 @@
+function [x, y] = get_cell_position(c_x, c_y, width, len, num_marker, order, markersize)
+
+% markersize and distance between markers
+dist = markersize;
+min_width = (markersize + dist) * num_marker + 2 * dist;
+min_len = (markersize + dist) * num_marker + 2 * dist;
+
+x = c_x;
+y = c_y;
+
+if( min_width > width || min_len > len )
+    disp('cell can not hold all markers');
+    return;
+end
+
+if( order > num_marker )
+    return;
+end
+
+% number of markers per row and per column
+x_num = ceil(sqrt(num_marker*(len/width)));
+y_num = ceil(sqrt(num_marker*(width/len)));
+
+row = floor(order/x_num);
+col = mod(order,x_num);
+
+% distance from the first marker center
+dist_x = (row-1) * (marker_size + dist);
+dist_y = (col-1) * (marker_size + dist);
+
+total_dist_x = (markersize + dist) * num_marker;
+total_dist_y = (markersize + dist) *
+
+
+end

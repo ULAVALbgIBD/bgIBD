@@ -1,0 +1,120 @@
+function [output_alleles, intervals, output_genotype, error] = prepare_haplotype_inference(assignment, genotype, family)
+
+error = 0;
+output_alleles = [];
+intervals = [];
+output_genotype = [];
+
+if( isempty(family) )
+    error = 1;
+    disp('error in family structure');
+    return;
+end
+
+if( isempty(assignment) )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+full_range = family.pedigree_range_full;
+ids = family.structure(:,2);
+
+num_ind = length(full_range);
+
+if( num_ind ~= length(ids) )
+    error = 1;
+    disp('family ', num2str(family.id), ': error in family structure');
+    return;
+end
+
+% all family members must be consecutively numbered in family structure
+if( min(ids) ~= 1 || max(ids) ~= num_ind || num_ind ~= length(unique(ids)) )
+    error = 1;
+    disp('family ', num2str(family.id), ': error in family structure');
+    return;
+end
+
+
+% check whether global IBD segments are valid
+% check whether genotype number match family members
+
+intervals = assignment.intervals(:,1:2);
+regions = length(intervals(:,1));
+[rows, cols] = size(genotype);
+num_markers = intervals(end,2);
+
+if( rows <= 0 || cols <= 0 )
+    error = 1;
+    disp('error in genotype data');
+    return;
+end
+
+if( regions <= 0 )
+    error = 1;
+    disp('error in global IBD')
+    return;
+end
+
+if( rows ~= num_ind )
+    error = 1;
+    disp('number of genotyped individuals do not match global IBD');
+    return;
+end
+
+if( cols < 6 + regions * 2 )
+    error = 1;
+    disp('markers do not match chromosomal segments');
+    return;
+end
+
+if( intervals(1,1) ~= 1 || cols ~= intervals(end,2) * 2 + 6 )
+    error = 1;
+    disp('markers do not match chromosomal segments');
+    return;
+end
+
+for i = 1:n
+
+
+% check global IBD
+alleles_all = assignment.alleles_all;
+
+if( length(alleles_all) ~= regions )
+    error = 1;
+    disp('error in global IBD');
+    return;
+end
+
+for i = 1:regions
+    temp = alleles_all{i};
+    error = check_assignment(temp, num_ind);
+    if( error ~= 0 )
+        error = 1;
+        disp(['error in global IBD, segment ', num2str(i)]);
+        return;
+    else
+        output_alleles{i} = temp;
+    end
+end
+
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

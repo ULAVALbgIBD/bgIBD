@@ -1,0 +1,16 @@
+function header = generate_header(pf, gf, mf)
+
+p = parse_header(pf);
+g = parse_header(gf);
+m = parse_header(mf);
+
+len1 = length(p);
+if( len1 <= 4 )
+    sp = p;
+else
+    sp = [p(1),p(len1-2,len1)];
+end
+len = length(g);
+if( len <= 4 )
+
+end

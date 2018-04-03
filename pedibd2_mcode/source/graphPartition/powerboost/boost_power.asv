@@ -1,0 +1,291 @@
+function [triples_seg, error] = boost_power(family_range, kinship, kinship2, family_genotype, vit, intervals)
+
+
+triples = [];
+error = 0;
+
+if( isempty(family_range) )
+    error = 1;
+    return;
+end
+
+nind = length(family_range.pedigree_range_full);
+if( nind <= 0 )
+    error = 1;
+    disp('error in family structures');
+    return;
+end
+
+family = family_range.structure;
+[r, c] = size(family);
+if( r <= 0 || r ~= nind || c < 12 )
+    error = 1;
+    disp('error in family structures');
+    return;
+end
+
+genotyped = family_range.family_range;
+ngeno = length(genotyped);
+if( ngeno <= 0 )
+    disp(['no genotyped individual in this family: ', num2str(family_range.family_id)]);
+    return;
+end
+if( any(genotyped > nind) || any(genotyped < 0 ) )
+    error = 1;
+    disp('error in family structures');
+    return;
+end
+
+[r, c] = size(kinship);
+if( r ~= ngeno || c ~= ngeno )
+    error = 1;
+    disp('error in kinship');
+    return;
+end
+[d1, d2, d3, d4] = size(kinship2);
+if( d1 ~= ngeno || d2 ~= ngeno || d3 ~= 2 || d4 ~= 2 )
+    error = 1;
+    disp('error in kinship');
+    return;
+end
+
+[d1, nmarkers, d3] = size(family_genotype);
+if( d1 <= 0 || d1 ~= nind )
+    error = 1;
+    disp('error in genotype data');
+    return;
+end
+if( nmarkers <= 0 || d3 ~= 2 )
+    error = 1;
+    disp('error in genotype data');
+    return
+end
+
+pairs = family_range.pairs;
+[npairs, d2] = size(pairs);
+if( npairs <= 0 || d2 ~= 2 )
+    error = 1;
+    return;
+end
+
+reverse_pairs = family_range.reverse_pairs;
+[r, c] = size(reverse_pairs);
+if( r ~= ngeno || c ~= ngeno )
+    error = 1;
+    return;
+end
+
+if( length(vit) ~= npairs )
+    error = 1;
+    disp('error in viterbi decoding');
+    return;
+end
+
+for i = 1:npairs
+    [r,c] = size(vit{i});
+    if( r ~= nmarkers || c ~= 2 )
+        error = 1;
+        disp('error in viterbi decoding');
+        return;
+    end
+end
+
+[nseg, c] = size(intervals);
+if( nseg <= 0 || c < 2 )
+    error = 1;
+    disp('error in chromosome segmentation');
+    return;
+end
+
+for i = 1:nseg
+    a = intervals(i,1);
+    b = intervals(i,2);
+    if( a <= 0 || a > b || b > nmarkers )
+        error = 1;
+        disp('error in chromosome segmentation');
+        return;
+    end
+end
+
+[triples, error] = generate_triples(family_range, kinship, kinship2);
+if( error ~= 0 )
+    return;
+end
+
+valid_triples = triples.valid_triples;
+num_triples = triples.total_triples;
+triple_viewpair(1:num_triples,1:nmarkers) = 0;
+
+for i = 1:ngeno
+    for j = i+1:ngeno
+        index_pair = reverse_pairs(i,j);
+        if( index_pair <= 0 || index_pair > npairs )
+            error = 1;
+            disp('error in family structures');
+            return;
+        end
+        viterbi = vit{index_pair}(1:nmarkers,1);
+        affinity1_pairs = (viterbi == 2);
+        if( ~any(affinity1_pairs) )
+            continue;
+        end
+        pair_ibs(1:nmarkers) = 0;
+        ind1 = pairs(index_pair,1);
+        ind2 = pairs(index_pair,2);
+        if( ind1 ~= genotyped(i) || ind2 ~= genotyped(j) )
+            error = 1;
+            disp('error in family structures');
+            return;
+        end
+        if( ~any(valid_triples(:,i,j)) )
+            continue;
+        end
+        for t = 1:nmarkers
+            pair_ibs(t) = count_ibd(family_genotype(ind1,t,1:2), family_genotype(ind2,t,1:2));
+        end
+        for k = 1:ngeno
+            triple_index = valid_triples(k,i,j);            
+            if( triple_index <= 0 )
+                continue;
+            end
+            pivot = genotyped(k);
+            if( pivot <= 0 || pivot > nind )
+                error = 1;
+                disp('error in family structures');
+                return;
+            end
+            index1 = reverse_pairs(k,i);
+            index2 = reverse_pairs(k,j);
+            if( index1 <= 0 || index1 > npairs || index2 <= 0 || index2 >= npairs )
+                error = 1;
+                disp('error in family structures');
+                return;
+            end
+            view1 = (vit{index1}(1:nmarkers,1) == 2);
+            view2 = (vit{index2}(1:nmarkers,1) == 2);
+            triple_ibd = view1 & view2 & affinity1_pairs;
+            if( ~any( triple_ibd ) )
+                continue;
+            end
+            pair_identical(1:nmarkers) = 0;
+            pivot_hetero(1:nmarkers) = 0;
+            for t = 1:nmarkers
+                if( any(family_genotype(pivot, t, 1:2) == 0) )
+                    continue;                        
+                end
+                if( family_genotype(pivot,t,1) == family_genotype(pivot,t,2) )
+                    continue;
+                end
+                if( any(family_genotype(ind1, t, 1:2) == 0) )
+                    continue;
+                end
+                if( any(family_genotype(ind2, t, 1:2) == 0) )
+                    continue;
+                end
+                pivot_hetero(t) = 1;
+                if( pair_ibs(t) ~= 2 )
+                    continue;
+                end
+                pair_identical(t) = 1;
+            end
+            
+            extension = 0;
+            temp_viewpair(1:nmarkers) = 0;
+            for t = 1:nmarkers-1
+                if( triple_ibd(t) == 1 )
+                    extension = extension + 1;
+                else
+                    extension = 0;
+                end
+                if( triple_ibd(t+1) == 0 )
+                    if( extension > 0 )
+                        finish = t;
+                        start = t - extension + 1;
+                        numhetero = nnz(pivot_hetero(start:finish));
+                        numidentical = nnz(pair_identical(start:finish));
+                        if( numhetero > 0 )
+                            temp_viewpair(start:finish) = numidentical/numhetero;
+                        end
+                    end
+                end
+            end
+            triple_viewpair(triple_index, 1:nmarkers) = temp_viewpair(1:nmarkers);
+        end       
+    end
+end
+
+for i = 1:nseg
+    a = intervals(i,1);
+    b = intervals(i,2);
+    all_triplesview(1:num_triples) = 0;
+    for j = 1:num_triples
+        value = mean(triple_viewpair(j, a:b));
+        if( value > 0.3 )
+            all_triplesview(j) = 1;
+        end
+        if( value > 0 && value <= 0.3 )
+            all_triplesview(j) = -1;
+        end
+        if( value == 0 )
+            all_triplesview(j) = 0;
+        end
+    end
+    triples_seg{i
+end
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

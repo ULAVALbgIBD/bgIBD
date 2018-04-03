@@ -1,0 +1,59 @@
+
+
+function [z_score, error] = non_paramatric_linkage_additive(assignment, family)
+
+
+error = 0;
+z_score = 0;
+
+
+[intervals, cols] = size(assignment);
+
+if( intervals <= 0 || cols ~= 1 )
+    error = 1;
+    disp('error in global IBD assignment');
+    return;
+end
+
+[nind, fields] = size(family);
+if( nind <= 0 || fields < 12 )
+    error = 1;
+    disp('error in family structure');
+    return;
+end
+
+raw_score(1:intervals) = 0;
+for i = 1:intervals
+    alleles = assignment{i};
+    [r,c] = size(alleles);
+    if( r ~= nind || c ~= 2 )
+        error = 1;
+        disp('error in global IBD');
+        return;
+    end
+    raw_score(i) = additive1family(family, alleles);
+end
+
+perm_times = min(100000, 10 * 2^(2*nind));
+perm_score(1:perm_times) = 0;
+for i = 1:perm_times
+    perm_score(i) = additive1family_randomized(family);
+end
+
+mu = mean(perm_score);
+delta = std(perm_score);
+
+z
+for i = 1:intervals
+    z_score(i) = (raw_score(i) - mu)/delta;
+end
+
+
+end
+
+
+
+
+
+
+

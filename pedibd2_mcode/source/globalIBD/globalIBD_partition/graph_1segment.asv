@@ -1,0 +1,56 @@
+function [alleles_all error] = graph_1segment(vit, ml, kinship2, posIBD1, pair_pos, triples, range, verify, debug)
+
+    error = 0;
+    % pick one choice of viterbi decoding or maximum likelihood
+    if( isempty(range) )
+        error = 1;
+        return;
+    end
+    nind = length(range.family_range);
+    if( nind <= 0 )
+        error = 1;
+        return;
+    end
+    [r, c] = size(vit);
+    if( r ~= nind || c ~= nind )
+        error = 1;
+        return;
+    end
+    [r, c] = size(ml);
+    if( r ~= nind || c ~= nind )
+        error = 1;
+        return;
+    end
+    [d1, d2, d3, d4] = size(posIBD1);
+    if( d1 ~= nind || d2 ~= nind || d3 ~= 2 || d4 ~= 2 )
+        error = 1;
+        return;
+    end
+    [d1, d2, d3] = size(pair_pos);
+    if( d1 ~= nind || d2 ~= nind || d3 ~= 3 )
+        error = 1;
+        return;
+    end
+    valid_triples = triples.valid_triples;
+    num_triples = triples.num_triples;
+    triple_viewpair = triples.triple_viewpair;
+    [d1, d2, d3] = size(valid_triples);
+    if( d1 ~= nind || d2 ~= nind || d3 ~= nind )
+        error = 1;
+        disp('error in triplets');
+        return;
+    end
+    [d1, d2, d3] = size(triple_viewpair);
+    if( d1 ~= nind || d2 ~= nind || d3 ~= nind )
+        error = 1;
+        disp('error in triplets');
+        return;
+    end
+    if( max(max(max(valid_triples))) > num_tri
+    
+    printid(1:nind) = range.structure(range.family_range,8);
+    [clique_config] = generate_all_cliques(ml, kinship2, posIBD1, pair_pos, triples, verify, debug, printid); 
+    alleles_all = clique2alleles(clique_config, range, kinship2);
+
+    
+end

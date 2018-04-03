@@ -1,0 +1,165 @@
+function error = check_family(family)
+
+error = 0;
+
+if( isempty(family) )
+    return;
+end
+num = length( family(:,1) );
+family_id = family(1,1);
+
+if( family_id
+
+ids = family(:,2);
+fa_ids = unique(family(:,3));
+mo_ids = unique(family(:,4));
+all_ids = unique([fa_ids;mo_ids;ids]);
+
+if( length(unique(ids)) ~= num )
+    error = 1;
+    disp(['duplicate ids in family ', num2str(family_id)]);
+    return;
+end
+
+if( any(ids<=0) )
+    error = 1;
+    disp(['non-positive id for some individuals in family '; num2str(family_id)]);
+    return;
+end
+
+% currently six digit maximum
+id_max = 999999;
+if( any(all_ids > id_max) )
+    error = 1;
+    disp(['family ', num2str(family_id), ': individual ids out of limit of ', num2str(id_max)]);
+    return;
+end
+
+
+
+isfather(1:max(all_ids)) = 0;
+ismother(1:max(all_ids)) = 0;
+% check whether the father, mother are defined in conflict
+for i = 1:num
+    fa = family(i,3);
+    mo = family(i,4);
+    if( fa ~= 0 )
+        if( isfather(fa) == 0 )
+            isfather(fa) = 1;
+        end
+        if( ismother(fa) ~= 0 )
+            error = 1;
+            disp(['family ', num2str(family_id), ': individual ', num2str(fa), ' defined as both father and mother']);
+            return;
+        end
+    end
+    if( mo ~= 0 )
+        if( isfather(mo) ~= 0 )
+            error = 1;
+            disp(['family ', num2str(family_id), ': individual ', num2str(mo), ' defined as both father and mother']);
+            return;
+        end
+        if( ismother(mo) == 0 )
+            ismother(mo) = 1;
+        end
+    end
+end
+
+% check whether the sex of parents are specified correctly
+for i = 1:num
+    id = family(i,2);
+    if( family(i,5) ~= 0 )
+        if( family(i,5) == 1 && ismother(id) )
+            error = 1;
+            disp(['family ', num2str(family_id), ': individual ', num2str(id), ' defined as both male and mother']);
+            return;
+        end
+        if( family(i,5) == 2 && isfather(id) )
+            error = 1;
+            disp(['family ', num2str(family_id), ': individual ', num2str(id), ' defined as both female and father']);
+            return;
+        end
+    end
+end
+
+defined(1:max(all_ids)) = 0;
+defined(ids) = 1:num;
+% check whether all parents are defined
+for i = 1:num
+    fa = family(i,3);
+    mo = family(i,4);
+    id = family(i,2);
+    if( fa ~= 0 )
+        if( defined(fa) == 0 )
+            disp(['warning: ', 'family ', num2str(family_id), ': individual ', num2str(fa), ', father of ', num2str(id), ', not defined']);
+        end
+    end
+    if( mo ~= 0 )
+        if( defined(mo) == 0 )
+            disp(['warning: ', 'family ', num2str(family_id), ': individual ', num2str(mo), ', mother of ', num2str(id), ', not defined']);
+        end
+    end
+end
+
+% compress for less use of memory
+num_all = nnz(all_ids>0);
+map(1:max(all_ids)) = 0;
+map(all_ids(all_ids>0)) = 1:num_all;
+ancestry(1:num_all,1:num_all) = 0;
+% check for circular relationship
+% ancestry is directed connected graph representation, checking for loops
+for i = 1:num
+    fa = family(i,3);
+    mo = family(i,4);
+    id = family(i,2);
+    if( fa ~= 0 )
+        self = map(id);
+        ancestor = map(fa);
+        if( self == ancestor || ancestry(self, ancestor) ~= 0 )
+            error = 1;
+            disp(['family ', num2str(family_id), ': circular relationship ', num2str(fa), '-', num2str(id), ', ancestor to each other']);
+            return;
+        end
+        if( ancestry(ancestor, self) == 0 )
+            ancestry(ancestor, self) = 1;
+            ancestry(ancestry(:,ancestor)>0, self) = 1;
+            ancestry(ancestor, ancestry(self,:)>0) = 1;
+            ancestry(ancestry(:,ancestor)>0, ancestry(self,:)>0) = 1;
+        end
+
+    end
+    if( mo ~= 0 )
+        self = map(id);
+        ancestor = map(mo);
+        if( self == ancestor || ancestry(self, ancestor) ~= 0 )
+            error = 1;
+            disp(['family ', num2str(family_id), ': circular relationship ', num2str(mo), '-', num2str(id), ', ancestor to each other']);
+            return;
+        end
+        if( ancestry(ancestor, self) == 0 )
+            ancestry(ancestor, self) = 1;
+            ancestry(ancestry(:,ancestor)>0, self) = 1;
+            ancestry(ancestor, ancestry(self,:)>0) = 1;
+            ancestry(ancestry(:,ancestor)>0, ancestry(self,:)>0) = 1;
+        end
+    end
+end
+
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

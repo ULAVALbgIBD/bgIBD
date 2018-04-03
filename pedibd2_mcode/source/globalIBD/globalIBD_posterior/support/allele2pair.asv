@@ -1,0 +1,23 @@
+function pair = allele2pair(alleles)
+
+    pair = [];
+    [nind, c] = size(alleles);
+    if( nind <= 0 || c ~= 2 )
+        return;
+    end
+    pair = zeros(nind, nind);
+    
+    a1 = repmat(alleles(1:nind,1), [1,nind]);
+    a2 = repmat(alleles(1:nind,2), [1,nind]);
+    b1 = a1';
+    b2 = a2';
+    
+    
+    
+    for i = 1:nind
+        for j = 1:nind
+            pair(i,j) = count_ibd(alleles(i,1:2), alleles(j,1:2));
+        end
+    end
+    
+end

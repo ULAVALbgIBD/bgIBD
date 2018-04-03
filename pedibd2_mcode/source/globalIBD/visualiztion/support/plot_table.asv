@@ -1,0 +1,23 @@
+function plot_table(cols, astring, alleles, assignment)
+
+num = length(assignment(:,1));
+if( num > 20 )
+    len = ceil(num/2);
+else
+    len 
+
+for i = 1:length(assignment(:,1))
+    p = assignment(i,1);
+    m = assignment(i,2);
+    p_index = find(alleles == p);
+    m_index = find(alleles == m);
+    text(i,3,num2str(i), 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'center', 'FontSize', 10);
+    text(i,2,astring{p_index}, 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'center', 'FontSize', 10);
+    text(i,1,astring{m_index}, 'VerticalAlignment', 'middle', 'HorizontalAlignment', 'center', 'FontSize', 10);
+    
+end
+
+    xlim([0.5,num+1]);
+    ylim([0.5,3.5]);
+
+end
